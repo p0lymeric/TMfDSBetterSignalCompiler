@@ -1,0 +1,3 @@
+git clean -fdX :/
+
+@pause

@@ -1,0 +1,23 @@
+<Project>
+    <!-- See https://aka.ms/dotnet/msbuild/customize for more details on customizing your build -->
+    <PropertyGroup>
+        <AssemblyName>BetterSignalCompiler</AssemblyName>
+        <Product>Better Signal Compiler</Product>
+        <AssemblyTitle>$(Product)</AssemblyTitle>
+        <Description>A mod assembly for TMfDS</Description>
+        <Company>polymeric</Company>
+        <Copyright>Copyright © polymeric. All rights reserved.</Copyright>
+        <Version>0.1.0</Version>
+        <RootNamespace>polymeric.BetterSignalCompiler</RootNamespace>
+        <GUID>polymeric.BetterSignalCompiler</GUID>
+
+        <TargetFramework>netstandard2.1</TargetFramework>
+        <LangVersion>14.0</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <PathMap>$(MSBuildThisFileDirectory)=.\</PathMap>
+        <GenerateDependencyFile>false</GenerateDependencyFile>
+
+        <ArtifactsPath>$(MSBuildThisFileDirectory)Artifacts</ArtifactsPath>
+    </PropertyGroup>
+</Project>
