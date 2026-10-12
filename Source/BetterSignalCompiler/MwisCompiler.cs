@@ -10,8 +10,9 @@
 // - The prefix trie is rebuilt on every compile, rather than incrementally modified on dictionary edits.
 // - The compiler is capable of tracking error spans, and line/column numbers can be trivially computed.
 //   However, we do not display this information.
-// - Ambiguities are currently reported as "Entry not found" with 2 traces delimited by a bar (e.g. TIMID ITY  |  TIMI DITY).
-//   LogError/CompileErrorType can be extended to add an Ambiguous error category.
+// - The compiler's error display does not scroll, which limits the amount of text that can be presented as feedback.
+//   Additionally, the error display clears after a brief time, which limits the amount of text that can be reasonably
+//   read (without screenshotting the game)
 
 namespace polymeric.BetterSignalCompiler;
 
@@ -128,15 +129,12 @@ public static class MwisCompiler {
                 j--;
             }
         }
-        Plugin.Singleton.logger.LogDebug($"CompileStringToSignal opt_schedule: {string.Join(", ", opt_schedule)}");
-        Plugin.Singleton.logger.LogDebug($"CompileStringToSignal ambiguous_points: {string.Join(", ", ambiguous_points)}");
+        opt_schedule.Reverse();
+        ambiguous_points.Reverse();
+        // Plugin.Singleton.logger.LogDebug($"CompileStringToSignal opt_schedule: {string.Join(", ", opt_schedule)}");
+        // Plugin.Singleton.logger.LogDebug($"CompileStringToSignal ambiguous_points: {string.Join(", ", ambiguous_points)}");
 
-        int[] signals = new int[opt_schedule.Count];
-        for (int i = 0; i < opt_schedule.Count; i++) {
-            signals[opt_schedule.Count - i - 1] = token_candidates[opt_schedule[i] - 1].id;
-        }
-        Plugin.Singleton.logger.LogDebug($"CompileStringToSignal signals: {string.Join(", ", signals)}");
-
+        SortedDictionary<(int, int), string> traces = [];
         void report_uncovered_non_whitespace(ref CompilerResult cr, int end_prev, int start) {
             int? error_start = null;
             for(int i = end_prev; i < start; i++) {
@@ -146,27 +144,36 @@ public static class MwisCompiler {
                 } else {
                     if (error_start.HasValue) {
                         cr.compilerResultTag = CompilerResultTag.ERROR;
-                        cr.LogError(input[error_start.GetValueOrDefault()..i], CompileErrorType.EntryNotFound);
-                        Plugin.Singleton.logger.LogDebug($"CompileStringToSignal cr.LogError: EntryNotFound {input[error_start.GetValueOrDefault()..i]}");
+                        string missing = input[error_start.GetValueOrDefault()..i];
+                        cr.LogError(missing, CompileErrorType.EntryNotFound);
+                        Plugin.Singleton.logger.LogDebug($"CompileStringToSignal cr.LogError: EntryNotFound {missing}");
+                        traces.Add((error_start.GetValueOrDefault(), i), missing);
                         error_start = null;
                     }
                 }
             }
             if (error_start.HasValue) {
                 cr.compilerResultTag = CompilerResultTag.ERROR;
-                cr.LogError(input[error_start.GetValueOrDefault()..start], CompileErrorType.EntryNotFound);
-                Plugin.Singleton.logger.LogDebug($"CompileStringToSignal cr.LogError: EntryNotFound {input[error_start.GetValueOrDefault()..start]}");
+                string missing = input[error_start.GetValueOrDefault()..start];
+                cr.LogError(missing, CompileErrorType.EntryNotFound);
+                Plugin.Singleton.logger.LogDebug($"CompileStringToSignal cr.LogError: EntryNotFound {missing}");
+                traces.Add((error_start.GetValueOrDefault(), start), missing);
             }
         }
+
+        int[] signals = new int[opt_schedule.Count];
         int end_prev = 0;
-        for (int i = opt_schedule.Count - 1; i >= 0; i--) {
+        for (int i = 0; i < opt_schedule.Count; i++) {
             TokenizeResult tk = token_candidates[opt_schedule[i] - 1];
+            signals[i] = tk.id;
+            traces.Add((tk.start, tk.end), $"|{tk.id}");
             report_uncovered_non_whitespace(ref cr, end_prev, tk.start);
             end_prev = tk.end;
         }
         if (end_prev < input.Length) {
             report_uncovered_non_whitespace(ref cr, end_prev, input.Length);
         }
+        Plugin.Singleton.logger.LogDebug($"CompileStringToSignal signals: {string.Join(", ", signals)}");
 
         foreach (int i in ambiguous_points) {
             List<TokenizeResult> left_divergence = [];
@@ -211,15 +218,34 @@ public static class MwisCompiler {
             //     start = left_divergence[0].start;
             // }
 
+            // If left and right divergence are the same size (as they should due to ambiguity only occurring between tokenizations of equal token count)
+            // zip through the left and right paths and append "?<right id at same idx>" to the trace
+            for (int k = 0; k < left_divergence.Count; k++) {
+                TokenizeResult tkl = left_divergence[k];
+                if (left_divergence.Count == right_divergence.Count) {
+                    traces[(tkl.start, tkl.end)] = $"|{tkl.id}?{right_divergence[k].id}";
+                } else {
+                    // Maybe there is an edge case where the two paths don't have equal length if the solution isn't valid (not sure)
+                    // If that is so, just append "?" to the left path's IDs
+                    traces[(tkl.start, tkl.end)] = $"|{tkl.id}?";
+                }
+            }
+
             string error_string = "";
             error_string += string.Join(" ", left_divergence.Select(tk => input[tk.start..tk.end]));
-            error_string += "  |  ";
+            error_string += "  ?  ";
             error_string += string.Join(" ", right_divergence.Select(tk => input[tk.start..tk.end]));
 
             cr.compilerResultTag = CompilerResultTag.ERROR;
-		    cr.LogError(error_string, CompileErrorType.EntryNotFound);
+		    cr.LogError(error_string, (CompileErrorType)HarmonyPatches.Patch__CompilerResult__GetStringFromErrorType.CompileErrorTypeExtended.Ambiguous);
             Plugin.Singleton.logger.LogDebug($"CompileStringToSignal cr.LogError: Ambiguous {error_string}");
         }
+
+        string trace_string = string.Join(" ", traces.Select(pair => pair.Value));
+        if (cr.compilerResultTag == CompilerResultTag.ERROR && input.Trim() != "") {
+            cr.LogError(trace_string, (CompileErrorType)HarmonyPatches.Patch__CompilerResult__GetStringFromErrorType.CompileErrorTypeExtended.PartialCompile);
+        }
+        Plugin.Singleton.logger.LogDebug($"CompileStringToSignal trace: {trace_string}");
 
         return new SignalMessage { signals = signals };
     }

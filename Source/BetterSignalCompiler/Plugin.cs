@@ -19,7 +19,7 @@ public class Plugin : BaseUnityPlugin {
     private void Awake() {
         Singleton = new();
 
-        Singleton.logger.LogInfo($"Hello from {MyPluginInfo.PLUGIN_NAME} {MyPluginInfo.PLUGIN_VERSION}!");
+        Singleton.logger.LogInfo($"Hello from {MyPluginInfo.PLUGIN_GUID} v{MyPluginInfo.PLUGIN_VERSION}!");
 
         HarmonyPatches.PatchInClassShallow(Singleton.harmony, typeof(HarmonyPatches));
     }

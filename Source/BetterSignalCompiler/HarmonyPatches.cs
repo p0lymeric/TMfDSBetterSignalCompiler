@@ -4,7 +4,7 @@ using HarmonyLib;
 namespace polymeric.BetterSignalCompiler;
 
 public static class HarmonyPatches {
-    [HarmonyPatch(typeof(C_Reformatter), "CompileStringToSignal")]
+    [HarmonyPatch(typeof(C_Reformatter), nameof(C_Reformatter.CompileStringToSignal))]
     public static class Patch__C_Reformatter__CompileStringToSignal {
         public static void Prefix(ref bool __runOriginal, ref SignalMessage __result, string input, ref CompilerResult cr) {
             if (!__runOriginal) {
@@ -12,6 +12,26 @@ public static class HarmonyPatches {
             }
             __runOriginal = false;
             __result = MwisCompiler.CompileStringToSignal(input, ref cr);
+        }
+    }
+
+    [HarmonyPatch(typeof(CompilerResult), "GetStringFromErrorType")]
+    public static class Patch__CompilerResult__GetStringFromErrorType {
+        public enum CompileErrorTypeExtended {
+            Ambiguous = 4,
+            PartialCompile = 5,
+        }
+        public static void Postfix(ref string __result, CompileErrorType cet) {
+            switch ((CompileErrorTypeExtended)cet) {
+                case CompileErrorTypeExtended.Ambiguous:
+                    __result = "Ambiguous";
+                    return;
+                case CompileErrorTypeExtended.PartialCompile:
+                    __result = "Partial compile";
+                    return;
+                default:
+                    return;
+            }
         }
     }
 
