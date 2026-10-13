@@ -5,7 +5,7 @@ using HarmonyLib;
 
 namespace polymeric.BetterSignalCompiler;
 
-public enum ConfigErrorFormat {
+public enum ConfigErrorLogDisplayFormat {
     TraceAndCount,
     TraceAndVerbose,
     Verbose,
@@ -18,25 +18,31 @@ public class Plugin : BaseUnityPlugin {
     public ManualLogSource logger;
     public Harmony harmony;
 
-    public ConfigEntry<bool> configParseBareIds;
-    public ConfigEntry<ConfigErrorFormat> configErrorFormat;
+    public ConfigEntry<bool> configParserParseBareIds;
+    public ConfigEntry<ConfigErrorLogDisplayFormat> configErrorLogDisplayFormat;
+    public ConfigEntry<bool> configErrorLogAbbreviateTrace;
 
     private Plugin() {
         this.logger = base.Logger;
         this.harmony = new(MyPluginInfo.PLUGIN_GUID);
 
-        // TODO investigate live config reloads
-        this.configParseBareIds = this.Config.Bind(
-            "General",
+        this.configParserParseBareIds = this.Config.Bind(
+            "Parser",
             "ParseBareIds",
             true,
-            "Enables parsing expressions of the form '|<integer>', which specify frequency offsets directly, rather than through dictionary words or digits."
+            "Enables parsing expressions of the form '|<integer>' (e.g. '|5', '|-244'), which directly specify frequency offsets.\nfalse: Do not parse '|<integer>' expressions.\ntrue: Parse '|<integer>' expressions."
         );
-        this.configErrorFormat = this.Config.Bind(
-            "General",
-            "ConfigErrorFormat",
-            ConfigErrorFormat.TraceAndCount,
+        this.configErrorLogDisplayFormat = this.Config.Bind(
+            "ErrorLog",
+            "DisplayFormat",
+            ConfigErrorLogDisplayFormat.TraceAndCount,
             "Selects a formatting style for displaying compilation errors.\nTraceAndCount: Shows a compile trace, followed by a count of each error type.\nTraceAndVerbose: Shows a compile trace, followed by every error.\nVerbose: Shows every error, like the base game compiler."
+        );
+        this.configErrorLogAbbreviateTrace = this.Config.Bind(
+            "ErrorLog",
+            "AbbreviateTrace",
+            true,
+            "Controls whether compile traces print every parsed ID, or whether runs of IDs are collapsed with '|...'.\nfalse: Print every parsed signal ID interspersed with unparsed portions of the input.\ntrue: Collapse parsed signal IDs with '|...' and print unparsed portions of the input."
         );
     }
 

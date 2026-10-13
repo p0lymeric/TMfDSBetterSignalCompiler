@@ -84,17 +84,6 @@ public enum CompileErrorTypeInternal {
 }
 
 public static class CompileErrorTypeInternalExtensions {
-    public static CompileErrorType MapToCompileErrorType(this CompileErrorTypeInternal ceti) {
-        return ceti switch {
-            CompileErrorTypeInternal.NaN => CompileErrorType.NaN,
-            CompileErrorTypeInternal.EntryNotFound => CompileErrorType.EntryNotFound,
-            CompileErrorTypeInternal.EmptyEntry => CompileErrorType.EmptyEntry,
-            CompileErrorTypeInternal.Ambiguous => CompileErrorType.EntryNotFound,
-            CompileErrorTypeInternal.BareIdIntegerTooWide => CompileErrorType.NaN,
-            _ => CompileErrorType.NaN,
-        };
-    }
-
     public static string GetString(this CompileErrorTypeInternal ceti) {
         return ceti switch {
             CompileErrorTypeInternal.NaN => "Not a Number",
@@ -141,7 +130,7 @@ public static class MwisCompiler {
                 tokenCandidates.Add(new TokenizeResult(TokenizeResultKind.Numeral, input[i] - '0', i, i + 1));
             }
             // Tokenize bare IDs
-            if (Plugin.Singleton.configParseBareIds.Value) {
+            if (Plugin.Singleton.configParserParseBareIds.Value) {
                 // TODO prune tokens that overlap with bare IDs
                 // (there is no problem with priority as bare IDs are wider than digits and the dictionary does not allow | characters)
                 Match bareIdMatch = BareIdRegex.Match(input, i);
@@ -226,7 +215,7 @@ public static class MwisCompiler {
         // traces - a merged list of signal IDs and errors that provide a summary of how the input string was tokenized
         int[] signals = new int[optSchedule.Count];
         List<(string, CompileErrorTypeInternal)> errors = [];
-        SortedDictionary<(int, int), string> traces = [];
+        SortedDictionary<(int, int), (string, bool)> traces = [];
 
         // Iterate through the solution tokens and the uncovered spans around the tokens
         int endPrev = 0;
@@ -235,11 +224,11 @@ public static class MwisCompiler {
             if (tk.kind != TokenizeResultKind.BareIdBig) {
                 // Copy solution token IDs to signals & add them to the trace
                 signals[i] = tk.id;
-                traces.Add((tk.start, tk.end), $"|{tk.id}");
+                traces.Add((tk.start, tk.end), ($"|{tk.id}", true));
             } else {
                 // Unless they were bare IDs that failed to parse into an int
                 errors.Add((input[tk.start..tk.end], CompileErrorTypeInternal.BareIdIntegerTooWide));
-                traces.Add((tk.start, tk.end), $"|TOOBIG:(");
+                traces.Add((tk.start, tk.end), ($"|TOOBIG:(", false));
             }
 
             // Verify that the span to the next token only contains whitespace
@@ -313,11 +302,11 @@ public static class MwisCompiler {
                 if (leftDivergence.Count == rightDivergence.Count) {
                     // If left and right divergence are the same size (they should be because the two solutions we explored have the same overall token count),
                     // zip through the left and right paths and append "?<right id at same idx>" to the trace
-                    traces[(tkl.start, tkl.end)] = $"|{tkl.id}?{rightDivergence[k].id}";
+                    traces[(tkl.start, tkl.end)] = ($"|{tkl.id}?{rightDivergence[k].id}", false);
                 } else {
                     // Maybe there is an edge case where the two paths don't have equal length if the solution isn't valid (not sure)
                     // If that is so, just append "?" to the left path's IDs
-                    traces[(tkl.start, tkl.end)] = $"|{tkl.id}?";
+                    traces[(tkl.start, tkl.end)] = ($"|{tkl.id}?", false);
                 }
             }
 
@@ -330,7 +319,25 @@ public static class MwisCompiler {
         }
 
         // Concatenate the partial compile trace string
-        string traceString = string.Join(" ", traces.Select(pair => pair.Value));
+        string traceString;
+        if (Plugin.Singleton.configErrorLogAbbreviateTrace.Value) {
+            List<string> tracesAbbrev = [];
+            bool inAbbrevRun = false;
+            foreach (var (str, abbrev) in traces.Values) {
+                if (abbrev) {
+                    if (!inAbbrevRun) {
+                        tracesAbbrev.Add("|...");
+                        inAbbrevRun = true;
+                    }
+                } else {
+                    tracesAbbrev.Add(str);
+                    inAbbrevRun = false;
+                }
+            }
+            traceString = string.Join(" ", tracesAbbrev);
+        } else {
+            traceString = string.Join(" ", traces.Select(pair => pair.Value.Item1));
+        }
         Plugin.Singleton.logger.LogDebug($"CompileStringToSignal trace: {traceString}");
 
         // If a compile error was ever reported, assemble the error message
@@ -339,37 +346,31 @@ public static class MwisCompiler {
             ref string errorMsg = ref DelegatesAndRefs.CompilerResult__errorMsg(cr);
             errorMsg = "- Compilation Failed -" + Environment.NewLine;
             // Trace
-            ConfigErrorFormat cef = Plugin.Singleton.configErrorFormat.Value;
-            if (cef == ConfigErrorFormat.TraceAndCount || cef == ConfigErrorFormat.TraceAndVerbose) {
+            ConfigErrorLogDisplayFormat cef = Plugin.Singleton.configErrorLogDisplayFormat.Value;
+            if (cef == ConfigErrorLogDisplayFormat.TraceAndCount || cef == ConfigErrorLogDisplayFormat.TraceAndVerbose) {
                 errorMsg += traceString + Environment.NewLine + Environment.NewLine;
             }
             // Count
-            if (cef == ConfigErrorFormat.TraceAndCount) {
+            if (cef == ConfigErrorLogDisplayFormat.TraceAndCount) {
                 foreach (var group in errors.GroupBy(err => err.Item2).OrderBy(grp => grp.Key)) {
                     errorMsg += $"{group.Key.GetString()}: {group.Count()}" + Environment.NewLine;
                 }
             }
             // Verbose
-            if (cef == ConfigErrorFormat.Verbose || cef == ConfigErrorFormat.TraceAndVerbose) {
+            if (cef == ConfigErrorLogDisplayFormat.Verbose || cef == ConfigErrorLogDisplayFormat.TraceAndVerbose) {
                 int errorIdx = 1;
                 foreach (var (errorPortion, ceti) in errors) {
                     errorMsg += $"{errorIdx} - {ceti.GetString()}: " + Environment.NewLine + errorPortion + Environment.NewLine;
                     errorIdx++;
                 }
             }
-            // Vanilla
-            // {
-            //     foreach (var (errorPortion, ceti) in errors) {
-            //         cr.LogError(errorMsg, ceti.MapToCompileErrorType());
-            //     }
-            // }
             Plugin.Singleton.logger.LogDebug($"CompileStringToSignal errorMsg: {errorMsg}");
         }
 
         return new SignalMessage { signals = signals };
     }
 
-    private static void CheckUncoveredNonWhitespace(List<(string, CompileErrorTypeInternal)> errors, SortedDictionary<(int, int), string> traces, string input, int endPrev, int start) {
+    private static void CheckUncoveredNonWhitespace(List<(string, CompileErrorTypeInternal)> errors, SortedDictionary<(int, int), (string, bool)> traces, string input, int endPrev, int start) {
         int? errorStart = null;
         for(int i = endPrev; i < start; i++) {
             char c = input[i];
@@ -378,7 +379,7 @@ public static class MwisCompiler {
             } else {
                 if (errorStart.HasValue) {
                     string missing = input[errorStart.GetValueOrDefault()..i];
-                    traces.Add((errorStart.GetValueOrDefault(), i), missing);
+                    traces.Add((errorStart.GetValueOrDefault(), i), (missing, false));
                     errors.Add((missing, CompileErrorTypeInternal.EntryNotFound));
                     errorStart = null;
                 }
@@ -386,7 +387,7 @@ public static class MwisCompiler {
         }
         if (errorStart.HasValue) {
             string missing = input[errorStart.GetValueOrDefault()..start];
-            traces.Add((errorStart.GetValueOrDefault(), start), missing);
+            traces.Add((errorStart.GetValueOrDefault(), start), (missing, false));
             errors.Add((missing, CompileErrorTypeInternal.EntryNotFound));
         }
     }
