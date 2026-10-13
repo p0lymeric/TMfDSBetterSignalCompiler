@@ -1,4 +1,5 @@
 ﻿using BepInEx;
+using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
 
@@ -11,13 +12,16 @@ public class Plugin : BaseUnityPlugin {
     public ManualLogSource logger;
     public Harmony harmony;
 
-    public Plugin() {
+    public ConfigEntry<bool> configParseBareIds;
+
+    private Plugin() {
         this.logger = base.Logger;
         this.harmony = new(MyPluginInfo.PLUGIN_GUID);
+        this.configParseBareIds = this.Config.Bind("General", "ParseBareIds", true, "Enables parsing expressions of the form '|<integer>', which specify frequency offsets directly, rather than through dictionary words or digits.");
     }
 
     private void Awake() {
-        Singleton = new();
+        Singleton = this;
 
         Singleton.logger.LogInfo($"Hello from {MyPluginInfo.PLUGIN_GUID} v{MyPluginInfo.PLUGIN_VERSION}!");
 

@@ -1,7 +1,7 @@
 <Project>
     <!-- See https://aka.ms/dotnet/msbuild/customize for more details on customizing your build -->
     <PropertyGroup>
-        <AssemblyName>BetterSignalCompiler</AssemblyName>
+        <AssemblyName>polymeric.BetterSignalCompiler</AssemblyName>
         <Product>Better Signal Compiler</Product>
         <AssemblyTitle>$(Product)</AssemblyTitle>
         <Description>A mod assembly for TMfDS</Description>
