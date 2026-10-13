@@ -15,26 +15,6 @@ public static class HarmonyPatches {
         }
     }
 
-    [HarmonyPatch(typeof(CompilerResult), "GetStringFromErrorType")]
-    public static class Patch__CompilerResult__GetStringFromErrorType {
-        public enum CompileErrorTypeExtended {
-            Ambiguous = 4,
-            PartialCompile = 5,
-        }
-        public static void Postfix(ref string __result, CompileErrorType cet) {
-            switch ((CompileErrorTypeExtended)cet) {
-                case CompileErrorTypeExtended.Ambiguous:
-                    __result = "Ambiguous";
-                    return;
-                case CompileErrorTypeExtended.PartialCompile:
-                    __result = "Partial compile";
-                    return;
-                default:
-                    return;
-            }
-        }
-    }
-
     // Variant of Harmony.PatchAll that executes a 1-deep child class scan for HarmonyPatch annotations
     public static void PatchInClassShallow(Harmony harmony, Type outerClass) {
         IEnumerable<Type> allHarmonyTypesUnderOuterClassNonRecursive =
