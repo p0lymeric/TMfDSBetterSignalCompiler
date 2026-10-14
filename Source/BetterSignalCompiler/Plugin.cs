@@ -35,13 +35,13 @@ public class Plugin : BaseUnityPlugin {
         this.configErrorLogDisplayFormat = this.Config.Bind(
             "ErrorLog",
             "DisplayFormat",
-            ConfigErrorLogDisplayFormat.TraceAndCount,
+            ConfigErrorLogDisplayFormat.Verbose,
             "Selects a formatting style for displaying compilation errors.\nTraceAndCount: Shows a compile trace, followed by a count of each error type.\nTraceAndVerbose: Shows a compile trace, followed by every error.\nVerbose: Shows every error, like the base game compiler."
         );
         this.configErrorLogAbbreviateTrace = this.Config.Bind(
             "ErrorLog",
             "AbbreviateTrace",
-            true,
+            false,
             "Controls whether compile traces print every parsed ID, or whether runs of IDs are collapsed with '|...'.\nfalse: Print every parsed signal ID interspersed with unparsed portions of the input.\ntrue: Collapse parsed signal IDs with '|...' and print unparsed portions of the input."
         );
     }

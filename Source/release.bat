@@ -15,8 +15,8 @@ git clean -fdx :/
 
 dotnet publish BetterSignalCompiler.slnx -c Release
 
-git add -f ..\Assemblies\*.dll
-git add -f ..\Assemblies\*.pdb
+git add -f ..\polymeric.BetterSignalCompiler.dll
+git add -f ..\polymeric.BetterSignalCompiler.pdb
 
 for /f "delims=" %%i in ('git show -s --format^="'%%s' (%%h)" HEAD') do set COMMITLINE=%%i
 
@@ -24,6 +24,6 @@ git commit -m "Build %COMMITLINE%"
 
 git tag -a "v%TAGVERSION%" -m "%TAGVERSION% release"
 
-git -C ..\ archive --prefix=BetterSignalCompiler\ -o BetterSignalCompiler-%TAGVERSION%.zip HEAD
+git -C ..\ archive --prefix=BepInEx\plugins\BetterSignalCompiler\ -o BetterSignalCompiler-%TAGVERSION%.zip HEAD
 
 pause
