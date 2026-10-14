@@ -8,6 +8,15 @@ Better Signal Compiler replaces the signal compiler in *The Message from Deep Sp
 
 It is the author's hope that the replacement's behaviour is more predictable, and better suited for editing transmissions using larger dictionaries (that are more likely to bump into limitations of the original signal compiler).
 
+## Installation
+
+Better Signal Compiler depends on BepInEx v5 as a mod loader.
+
+1. Download [BepInEx v5](https://github.com/BepInEx/BepInEx/releases) and extract it to the game root directory.
+2. Download [Better Signal Compiler](https://github.com/p0lymeric/TMfDSBetterSignalCompiler/releases) and merge it with the BepInEx directory.
+3. After running the game once, you can inspect whether Better Signal Compiler loaded successfully by checking BepInEx/LogOutput.log (`[Info   :Better Signal Compiler] Hello from polymeric.BetterSignalCompiler vx.x.x!`)
+4. After running the game once, a configuration file will be generated under `BepInEx/config/polymeric.BetterSignalCompiler.cfg`. This file may be directly edited, or another mod like [BepInEx Configuration Manager](https://github.com/BepInEx/BepInEx.ConfigurationManager) can be used to edit the configuration in-game.
+
 ## Features
 ### Compiler
 
