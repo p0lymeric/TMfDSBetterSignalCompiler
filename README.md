@@ -1,6 +1,6 @@
-[GitHub Releases](https://github.com/p0lymeric/TMfDSBetterSignalCompiler/releases)
-
 # Better Signal Compiler
+
+[GitHub Releases](https://github.com/p0lymeric/TMfDSBetterSignalCompiler/releases) | [Thunderstore](https://thunderstore.io/c/the-message-from-deep-space/p/polymeric/BetterSignalCompiler/)
 
 The year is 1975. Dr. Bautista recently attended a [seminar on algorithm design](https://en.wikipedia.org/wiki/Aho%E2%80%93Corasick_algorithm#History)[1], in which he experienced a mildly disturbing callback to one of his prior projects. "These techniques would have been useful for handling the *Transmission*...", he thought, vexed at himself. "But it is not too late..."
 

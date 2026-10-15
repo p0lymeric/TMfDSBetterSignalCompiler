@@ -7,7 +7,7 @@
         <Description>A mod assembly for TMfDS v1.2.1</Description>
         <Company>polymeric</Company>
         <Copyright>Copyright © polymeric. All rights reserved.</Copyright>
-        <Version>1.0.0</Version>
+        <Version>1.0.1</Version>
         <RootNamespace>polymeric.BetterSignalCompiler</RootNamespace>
         <BepInExPluginGuid>polymeric.BetterSignalCompiler</BepInExPluginGuid>
 

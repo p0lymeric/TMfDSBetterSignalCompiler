@@ -13,6 +13,8 @@ git checkout --detach
 git reset --hard
 git clean -fdx :/
 
+cd ..\Source
+
 dotnet publish BetterSignalCompiler.slnx -c Release
 
 git add -f ..\polymeric.BetterSignalCompiler.dll
@@ -25,5 +27,7 @@ git commit -m "Build %COMMITLINE%"
 git tag -a "v%TAGVERSION%" -m "%TAGVERSION% release"
 
 git -C ..\ archive --prefix=BepInEx\plugins\BetterSignalCompiler\ -o BetterSignalCompiler-%TAGVERSION%.zip HEAD
+
+git -C ..\ archive --add-file=Collateral\Thunderstore\manifest.json --add-file=Collateral\Thunderstore\icon.png --add-file=README.md --add-file=CHANGELOG.md --prefix=BepInEx\plugins\BetterSignalCompiler\ -o BetterSignalCompiler-Thunderstore-%TAGVERSION%.zip HEAD
 
 pause

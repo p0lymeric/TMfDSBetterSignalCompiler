@@ -1,0 +1,9 @@
+{
+    "name": "BetterSignalCompiler",
+    "description": "Replaces the signal compiler in The Message from Deep Space with a better behaved implementation.",
+    "version_number": "1.0.1",
+    "dependencies": [
+        "BepInEx-BepInExPack-5.4.2305"
+    ],
+    "website_url": "https://github.com/p0lymeric/TMfDSBetterSignalCompiler"
+}
