@@ -26,8 +26,11 @@ git commit -m "Build %COMMITLINE%"
 
 git tag -a "v%TAGVERSION%" -m "%TAGVERSION% release"
 
-git -C ..\ archive --prefix=BepInEx\plugins\BetterSignalCompiler\ -o BetterSignalCompiler-%TAGVERSION%.zip HEAD
+rem git archive will not normalize the slashes given to it for the --prefix argument, even if they violate ZIP file format specification.
+rem Use forward slashes (/) for --prefix.
 
-git -C ..\ archive --add-file=Collateral\Thunderstore\manifest.json --add-file=Collateral\Thunderstore\icon.png --add-file=README.md --add-file=CHANGELOG.md --prefix=BepInEx\plugins\BetterSignalCompiler\ -o BetterSignalCompiler-Thunderstore-%TAGVERSION%.zip HEAD
+git -C ..\ archive --prefix=BepInEx/plugins/BetterSignalCompiler/ -o BetterSignalCompiler-%TAGVERSION%.zip HEAD
+
+git -C ..\ archive --add-file=Collateral\Thunderstore\manifest.json --add-file=Collateral\Thunderstore\icon.png --add-file=README.md --add-file=CHANGELOG.md --prefix=BepInEx/plugins/BetterSignalCompiler/ -o BetterSignalCompiler-Thunderstore-%TAGVERSION%.zip HEAD polymeric.BetterSignalCompiler.dll polymeric.BetterSignalCompiler.pdb README.md LICENSE.md CHANGELOG.md
 
 pause
